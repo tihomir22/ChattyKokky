@@ -9,13 +9,7 @@ import React, { useState } from 'react';
 import { Chat, MessageType } from '@flyerhq/react-native-chat-ui'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import type {PropsWithChildren} from 'react';
-import {
-  useColorScheme,
-} from 'react-native';
 
-import {
-  Colors,
-} from 'react-native/Libraries/NewAppScreen';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -31,13 +25,8 @@ const uuidv4 = () => {
 
 
 function App(): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
   const [messages, setMessages] = useState<MessageType.Any[]>([])
+  const [awaitingResponse,setAwaitingResponse] = useState(false)
   const user = { id: '06c33e8b-e835-4736-80f4-63f44b66666c' }
 
   const addMessage = (message: MessageType.Any) => {
@@ -55,10 +44,12 @@ function App(): JSX.Element {
     addMessage(textMessage)
   }
   return (
-    <SafeAreaProvider style={backgroundStyle}>
+    <SafeAreaProvider>
       <Chat
         messages={messages}
-        onSendPress={handleSendPress}
+        onSendPress={(message)=>{
+          handleSendPress(message)
+        }}
         user={user}
       />
     </SafeAreaProvider>
