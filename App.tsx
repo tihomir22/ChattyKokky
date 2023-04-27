@@ -10,6 +10,7 @@ import {Chat, MessageType} from '@flyerhq/react-native-chat-ui';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import type {PropsWithChildren} from 'react';
 import {ActivityIndicator, View} from 'react-native';
+import axios from 'axios';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -24,13 +25,13 @@ const uuidv4 = () => {
 };
 
 function App(): JSX.Element {
-  const [messages, setMessages] = useState<MessageType.Any[]>([]);
+  const [messages, setMessages] = useState<MessageType.Text[]>([]);
   const [awaitingResponse, setAwaitingResponse] = useState(false);
   const user = {id: '06c33e8b-e835-4736-80f4-63f44b66666c'};
   const server = {id: '06c33e8b-e835-4736-80f4-63f44b61488c'};
-  const addMessage = (message: MessageType.Any) => {
-    const actualMessages = messages
-    actualMessages.push(message)
+  const addMessage = (message: MessageType.Text) => {
+    const actualMessages = messages;
+    actualMessages.unshift(message);
     setMessages(actualMessages);
   };
 
@@ -42,24 +43,41 @@ function App(): JSX.Element {
       text: message,
       type: 'text',
     };
-    return textMessage; 
+    return textMessage;
   };
 
-  const awaitResponseFromServer = () => {
+  const sendPrompt = async (text: string) => {
     setAwaitingResponse(true);
-    //prompt
-    const latestMessageSentByUser = messages[messages.length - 1];
-    setTimeout(() => {
-      const textMessage = createTextMessage('Output model', server);
+    try {
+      const axiosResponse = await axios.post(
+        'https://8268-84-127-212-50.ngrok-free.app/answer',
+        {mensaje: text},
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      const textMessage = createTextMessage(
+        axiosResponse.data.respuesta,
+        server,
+      );
       addMessage(textMessage);
       setAwaitingResponse(false);
-    }, 1000);
+    } catch (error) {
+      const textMessage = createTextMessage(
+        'An error happened on the server :(',
+        server,
+      );
+      addMessage(textMessage);
+      setAwaitingResponse(false);
+    }
   };
 
   const handleSendPress = (message: MessageType.PartialText) => {
     const textMessage = createTextMessage(message.text, user);
     addMessage(textMessage);
-    awaitResponseFromServer();
+    sendPrompt(message.text);
   };
   return (
     <SafeAreaProvider>
@@ -81,6 +99,7 @@ function App(): JSX.Element {
       )}
       <Chat
         messages={messages}
+        showUserNames={true}
         onSendPress={message => {
           handleSendPress(message);
         }}
